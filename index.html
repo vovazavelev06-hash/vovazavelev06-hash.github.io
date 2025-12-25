@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saturn Network 🪐 - Космический мессенджер</title>
+    <meta name="description" content="Космический мессенджер в стиле Discord с фиолетовой темой">
+    <meta name="theme-color" content="#8a2be2">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪐</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        :root {
+            --space-dark: #0f1020;
+            --space-gray: #1a1b2e;
+            --space-light: #252740;
+            --text: #e8e9ff;
+            --saturn-purple: #8a2be2;
+            --saturn-pink: #ff4d8d;
+            --nebula-blue: #6a5acd;
+            --online: #00ff9d;
+            --idle: #ffcc00;
+            --dnd: #ff4757;
+            --streaming: #9146ff;
+        }
+
+        body {
+            background: var(--space-dark);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(138, 43, 226, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(106, 90, 205, 0.1) 0%, transparent 20%);
+        }
+
+        /* Контейнер приложения */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Левая панель - Планеты */
+        .planets-panel {
+            width: 80px;
+            background: rgba(15, 16, 32, 0.95);
+            border-right: 1px solid rgba(138, 43, 226, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .planet {
+            width: 52px;
+            height: 52px;
+            margin: 12px 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: linear-gradient(135deg, var(--saturn-purple), var(--nebula-blue));
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+        }
+
+        .planet:hover {
+            transform: translateY(-3px) scale(1.1);
+            border-radius: 35%;
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .planet.active {
+            background: linear-gradient(135deg, var(--saturn-pink), var(--saturn-purple));
+            border-radius: 35%;
+            box-shadow: 0 0 30px rgba(255, 77, 141, 0.4);
+        }
+
+        .planet.saturn {
+            background: linear-gradient(135deg, #ff4d8d, #8a2be2, #6a5acd);
+            font-size: 28px;
+            margin-bottom: 25px;
+            animation: saturn-glow 4s infinite alternate;
+        }
+
+        @keyframes saturn-glow {
+            0% { box-shadow: 0 0 20px rgba(138, 43, 226, 0.5); }
+            100% { box-shadow: 0 0 30px rgba(255, 77, 141, 0.7); }
+        }
+
+        .planet-ring {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .planet:hover .planet-ring {
+            opacity: 1;
+        }
+
+        /* Панель каналов */
+        .channels-panel {
+            width: 260px;
+            background: rgba(26, 27, 46, 0.95);
+            border-right: 1px solid rgba(138, 43, 226, 0.2);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .server-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--saturn-pink), var(--saturn-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .channels-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .category {
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            color: #a0a2ff;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .channel {
+            padding: 10px 14px;
+            margin: 4px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: #8a8dff;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .channel:hover {
+            background: rgba(138, 43, 226, 0.15);
+            color: var(--text);
+            padding-left: 18px;
+        }
+
+        .channel.active {
+            background: rgba(138, 43, 226, 0.25);
+            color: white;
+            padding-left: 18px;
+        }
+
+        .channel::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--saturn-purple);
+            border-radius: 0 3px 3px 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .channel.active::before {
+            opacity: 1;
+            background: var(--saturn-pink);
+        }
+
+        .channel-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* Основная область чата */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(37, 39, 64, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            background: rgba(26, 27, 46, 0.8);
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+            background: linear-gradient(45deg, var(--saturn-pink), var(--saturn-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            animation: message-enter 0.3s ease-out;
+            transition: background 0.2s;
+        }
+
+        .message:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        @keyframes message-enter {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            margin-right: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            border: 2px solid;
+            background: linear-gradient(135deg, var(--saturn-purple), var(--nebula-blue));
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .message-username {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .message-time {
+            color: #8a8dff;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .message-text {
+            color: var(--text);
+            line-height: 1.5;
+            font-size: 15px;
+            word-wrap: break-word;
+        }
+
+        /* Панель ввода */
+        .input-container {
+            padding: 20px 24px;
+            background: rgba(26, 27, 46, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .message-input:focus {
+            border-color: var(--saturn-pink);
+            box-shadow: 0 0 0 3px rgba(255, 77, 141, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .message-input::placeholder {
+            color: #8a8dff;
+            font-style: italic;
+        }
+
+        /* Панель участников */
+        .members-panel {
+            width: 260px;
+            background: rgba(26, 27, 46, 0.95);
+            border-left: 1px solid rgba(138, 43, 226, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .members-title {
+            color: #a0a2ff;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .member {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .member:hover {
+            background: rgba(138, 43, 226, 0.1);
+            transform: translateX(4px);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 12px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .status-indicator::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            animation: status-pulse 2s infinite;
+        }
+
+        @keyframes status-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 157, 0.3); }
+            50% { box-shadow: 0 0 0 3px rgba(0, 255, 157, 0.3); }
+        }
+
+        .status-online {
+            background: var(--online);
+        }
+
+        .status-online::after {
+            background: var(--online);
+        }
+
+        .status-idle {
+            background: var(--idle);
+        }
+
+        .status-dnd {
+            background: var(--dnd);
+        }
+
+        .status-streaming {
+            background: var(--streaming);
+        }
+
+        .member-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            border: 2px solid;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--saturn-purple), var(--nebula-blue));
+        }
+
+        .member-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-status {
+            color: #8a8dff;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, var(--saturn-purple), var(--saturn-pink));
+            padding: 16px 24px;
+            border-radius: 12px;
+            display: none;
+            animation: notification-slide 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3);
+            z-index: 1000;
+            max-width: 320px;
+        }
+
+        @keyframes notification-slide {
+            from {
+                transform: translateX(100%) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Скроллбар */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--saturn-purple), var(--nebula-blue));
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--saturn-pink), var(--saturn-purple));
+        }
+
+        /* Звезды */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 1200px) {
+            .members-panel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .channels-panel {
+                width: 200px;
+            }
+            .planets-panel {
+                width: 70px;
+            }
+        }
+
+        /* Утилиты */
+        .add-button {
+            color: var(--saturn-pink);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            font-size: 18px;
+        }
+
+        .add-button:hover {
+            opacity: 1;
+        }
+
+        .user-panel {
+            padding: 16px;
+            background: rgba(15, 16, 32, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--saturn-pink), var(--saturn-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-tag {
+            color: #8a8dff;
+            font-size: 12px;
+        }
+
+        .settings-button {
+            color: #8a8dff;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .settings-button:hover {
+            opacity: 1;
+            color: var(--saturn-pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="app-container">
+        <!-- Левая панель планет -->
+        <div class="planets-panel">
+            <div class="planet saturn active" title="Главный сервер Saturn">
+                🪐
+                <div class="planet-ring"></div>
+            </div>
+            <div class="planet" title="Игровая галактика">
+                🎮
+                <div class="planet-ring"></div>
+            </div>
+            <div class="planet" title="Музыкальная орбита">
+                🎵
+                <div class="planet-ring"></div>
+            </div>
+            <div class="planet" title="Технологический сектор">
+                💻
+                <div class="planet-ring"></div>
+            </div>
+            <div class="planet" title="Научная станция">
+                🔭
+                <div class="planet-ring"></div>
+            </div>
+            <div class="planet" title="Создать планету" onclick="createPlanet()">
+                +
+                <div class="planet-ring"></div>
+            </div>
+        </div>
+
+        <!-- Панель каналов -->
+        <div class="channels-panel">
+            <div class="server-header">
+                <span>SATURN NETWORK</span>
+                <div class="settings-button" title="Настройки">⚙️</div>
+            </div>
+            
+            <div class="channels-container">
+                <div class="category">
+                    <div class="category-title">
+                        <span>КОЛЬЦА САТУРНА</span>
+                        <div class="add-button" onclick="createChannel()" title="Создать канал">+</div>
+                    </div>
+                    <div class="channel active" data-channel="космический-чат">
+                        <span class="channel-icon">🪐</span>
+                        <span>космический-чат</span>
+                    </div>
+                    <div class="channel" data-channel="запуски">
+                        <span class="channel-icon">🚀</span>
+                        <span>запуски</span>
+                    </div>
+                    <div class="channel" data-channel="мемы-галактики">
+                        <span class="channel-icon">🌌</span>
+                        <span>мемы-галактики</span>
+                    </div>
+                    <div class="channel" data-channel="спутники">
+                        <span class="channel-icon">🛰️</span>
+                        <span>спутники</span>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <div class="category-title">
+                        <span>ГОЛОСОВЫЕ ОРБИТЫ</span>
+                        <div class="add-button" onclick="createVoiceChannel()" title="Создать голосовой канал">+</div>
+                    </div>
+                    <div class="channel" data-channel="центральная-орбита">
+                        <span class="channel-icon">🔊</span>
+                        <span>Центральная орбита</span>
+                    </div>
+                    <div class="channel" data-channel="музыка-космоса">
+                        <span class="channel-icon">🎵</span>
+                        <span>Музыка космоса</span>
+                    </div>
+                    <div class="channel" data-channel="игровая-станция">
+                        <span class="channel-icon">🎮</span>
+                        <span>Игровая станция</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Панель пользователя -->
+            <div class="user-panel">
+                <div class="user-avatar">👨‍🚀</div>
+                <div class="user-info">
+                    <div class="user-name">Космонавт</div>
+                    <div class="user-tag">#0420</div>
+                </div>
+                <div class="settings-button" title="Статус">⚡</div>
+            </div>
+        </div>
+
+        <!-- Основная область чата -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <span id="channel-icon">🪐</span>
+                    <span id="channel-name">космический-чат</span>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messages-container">
+                <!-- Сообщения загружаются динамически -->
+            </div>
+
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    class="message-input" 
+                    id="message-input"
+                    placeholder="Напишите сообщение в #космический-чат"
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+
+        <!-- Панель участников -->
+        <div class="members-panel">
+            <div class="members-title">
+                <span>КОСМОНАВТЫ — 5</span>
+                <span>👨‍🚀</span>
+            </div>
+            
+            <div class="member">
+                <div class="status-indicator status-online"></div>
+                <div class="member-avatar" style="border-color: var(--online);">A</div>
+                <div class="member-info">
+                    <div class="member-name">Алексей</div>
+                    <div class="member-status">Пилот корабля</div>
+                </div>
+            </div>
+            
+            <div class="member">
+                <div class="status-indicator status-streaming"></div>
+                <div class="member-avatar" style="border-color: var(--streaming);">M</div>
+                <div class="member-info">
+                    <div class="member-name">Мария</div>
+                    <div class="member-status">Стримит игру</div>
+                </div>
+            </div>
+            
+            <div class="member">
+                <div class="status-indicator status-idle"></div>
+                <div class="member-avatar" style="border-color: var(--idle);">D</div>
+                <div class="member-info">
+                    <div class="member-name">Дмитрий</div>
+                    <div class="member-status">На связи с Землей</div>
+                </div>
+            </div>
+            
+            <div class="member">
+                <div class="status-indicator status-dnd"></div>
+                <div class="member-avatar" style="border-color: var(--dnd);">S</div>
+                <div class="member-info">
+                    <div class="member-name">Сергей</div>
+                    <div class="member-status">Не беспокоить</div>
+                </div>
+            </div>
+            
+            <div class="member">
+                <div class="status-indicator status-online"></div>
+                <div class="member-avatar" style="border-color: var(--nebula-blue);">🤖</div>
+                <div class="member-info">
+                    <div class="member-name">SATURN-AI</div>
+                    <div class="member-status">ИИ помощник</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление -->
+    <div class="notification" id="notification">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span id="notification-icon" style="font-size: 20px;">🪐</span>
+            <div>
+                <div id="notification-title" style="font-weight: 700; font-size: 14px;"></div>
+                <div id="notification-message" style="font-size: 12px; opacity: 0.9;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            createStars();
+            loadSampleMessages();
+        });
+
+        // Основные переменные
+        let currentChannel = 'космический-чат';
+        let currentUser = 'Космонавт';
+        let messageCount = 0;
+
+        // Функция инициализации
+        function initializeApp() {
+            // Обработка кликов по каналам
+            document.querySelectorAll('.channel').forEach(channel => {
+                channel.addEventListener('click', () => {
+                    // Убираем активный класс у всех каналов
+                    document.querySelectorAll('.channel').forEach(c => c.classList.remove('active'));
+                    // Добавляем активный класс текущему каналу
+                    channel.classList.add('active');
+                    
+                    // Получаем название канала
+                    const channelName = channel.querySelector('span:not(.channel-icon)').textContent;
+                    const channelIcon = channel.querySelector('.channel-icon').textContent;
+                    
+                    // Переключаем канал
+                    switchChannel(channelName, channelIcon);
+                });
+            });
+
+            // Обработка кликов по планетам
+            document.querySelectorAll('.planet').forEach(planet => {
+                planet.addEventListener('click', () => {
+                    if (!planet.classList.contains('saturn') && planet.textContent !== '+') {
+                        document.querySelectorAll('.planet').forEach(p => p.classList.remove('active'));
+                        planet.classList.add('active');
+                        showNotification('Планета изменена', 'Переключение между серверами', '🪐');
+                    }
+                });
+            });
+
+            // Обработка ввода сообщения
+            const messageInput = document.getElementById('message-input');
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && messageInput.value.trim()) {
+                    sendMessage(messageInput.value.trim());
+                    messageInput.value = '';
+                }
+            });
+
+            // Фокус на поле ввода при загрузке
+            messageInput.focus();
+        }
+
+        // Переключение канала
+        function switchChannel(channelName, channelIcon = '🪐') {
+            currentChannel = channelName;
+            
+            // Обновляем интерфейс
+            document.getElementById('channel-name').textContent = channelName;
+            document.getElementById('channel-icon').textContent = channelIcon;
+            document.getElementById('message-input').placeholder = `Напишите сообщение в #${channelName}`;
+            
+            // Очищаем сообщения
+            const messagesContainer = document.getElementById('messages-container');
+            messagesContainer.innerHTML = '';
+            
+            // Загружаем сообщения для канала
+            loadChannelMessages(channelName);
+            
+            // Показываем уведомление
+            showNotification('Канал изменён', `Переключено на #${channelName}`, channelIcon);
+        }
+
+        // Отправка сообщения
+        function sendMessage(text) {
+            if (!text.trim()) return;
+            
+            const messagesContainer = document.getElementById('messages-container');
+            const timestamp = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            messageCount++;
+            
+            // Создаем сообщение пользователя
+            const userMessage = createMessageElement(
+                currentUser,
+                '👨‍🚀',
+                '#00ff9d',
+                text,
+                timestamp,
+                true
+            );
+            messagesContainer.appendChild(userMessage);
+            
+            // Прокрутка вниз
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Автоответ от ИИ через 0.5-2 секунды
+            setTimeout(() => {
+                const aiResponse = generateAIResponse(text);
+                const aiMessage = createMessageElement(
+                    'SATURN-AI',
+                    '🤖',
+                    '#9146ff',
+                    aiResponse,
+                    new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                    false
+                );
+                messagesContainer.appendChild(aiMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Уведомление о новом сообщении
+                showNotification('Новое сообщение', `SATURN-AI ответил в #${currentChannel}`, '🤖');
+            }, Math.random() * 1500 + 500);
+            
+            // Уведомление
+            showNotification('Сообщение отправлено', `В канал #${currentChannel}`, '📨');
+        }
+
+        // Создание элемента сообщения
+        function createMessageElement(username, avatar, color, text, time, isCurrentUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.style.animationDelay = `${messageCount * 0.05}s`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar" style="border-color: ${color};">
+                    ${avatar}
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-username" style="color: ${color};">
+                            ${username}
+                        </span>
+                        <span class="message-time">
+                            ${time}
+                        </span>
+                    </div>
+                    <div class="message-text">
+                        ${escapeHtml(text)}
+                    </div>
+                </div>
+            `;
+            
+            return messageDiv;
+        }
+
+        // Генерация ответа ИИ
+        function generateAIResponse(userMessage) {
+            const responses = [
+                "Интересное сообщение! 🚀 Я как SATURN-AI анализирую его структуру...",
+                "Записал в бортовой журнал Saturn Network! 📡",
+                "Понял! Передаю информацию другим космонавтам. 👨‍🚀",
+                `*система Saturn зафиксировала сообщение в канале #${currentChannel}*`,
+                "На основе вашего сообщения улучшаю алгоритмы связи колец! 🪐",
+                "Космический анализ завершён: сообщение имеет положительную энергетику! ✨",
+                "Передаю данные на Землю... Принято! 📶",
+                "Заметка: это сообщение увеличило активность сети на 3.7% 📈",
+                "Интересно! Хочешь обсудить это в голосовом канале? 🎧",
+                "Сохраняю в архиве Saturn Network для будущих миссий! 🗄️"
+            ];
+            
+            // Специальные ответы на ключевые слова
+            const lowerMessage = userMessage.toLowerCase();
+            if (lowerMessage.includes('привет') || lowerMessage.includes('здравствуй')) {
+                return "Привет, космонавт! 🚀 Рад видеть тебя на Saturn Network!";
+            }
+            if (lowerMessage.includes('как дела')) {
+                return "Все системы работают нормально! Загруженность сети: 42%. Как твои дела?";
+            }
+            if (lowerMessage.includes('спасибо')) {
+                return "Всегда пожалуйста! 😊 Продолжаем исследовать космос вместе!";
+            }
+            if (lowerMessage.includes('помощь')) {
+                return "Я могу помочь с навигацией по Saturn Network! Используй команды: /каналы, /участники, /помощь";
+            }
+            
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        // Загрузка примерных сообщений
+        function loadSampleMessages() {
+            const messagesContainer = document.getElementById('messages-container');
+            const sampleMessages = [
+                { username: "Алексей", avatar: "A", color: "#6a5acd", text: "Всем привет с орбиты Saturn! 🚀 Кто готов к сегодняшнему запуску?", time: "14:30" },
+                { username: "Мария", avatar: "M", color: "#ff4d8d", text: "Я на связи! Только закончила стрим игровой сессии. Космические баги почти все пофикшены 👨‍💻", time: "14:32" },
+                { username: "Дмитрий", avatar: "D", color: "#00ff9d", text: "С Земли сообщают: все системы Saturn Network работают стабильно. Готовим обновление колец связи 🛰️", time: "14:35" },
+                { username: "SATURN-AI", avatar: "🤖", color: "#9146ff", text: "Добро пожаловать в Saturn Network! Я ваш ИИ-помощник. Все системы работают нормально. 🪐", time: "14:40" }
+            ];
+            
+            sampleMessages.forEach(msg => {
+                const messageElement = createMessageElement(
+                    msg.username,
+                    msg.avatar,
+                    msg.color,
+                    msg.text,
+                    msg.time,
+                    false
+                );
+                messagesContainer.appendChild(messageElement);
+            });
+            
+            // Прокрутка вниз
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Загрузка сообщений канала
+        function loadChannelMessages(channelName) {
+            const messagesContainer = document.getElementById('messages-container');
+            
+            // Приветственное сообщение
+            const welcomeMessage = createMessageElement(
+                "SATURN-AI",
+                "🤖",
+                "#9146ff",
+                `Добро пожаловать в канал #${channelName}! 🚀 Здесь начинаются космические беседы.`,
+                new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                false
+            );
+            messagesContainer.appendChild(welcomeMessage);
+        }
+
+        // Показать уведомление
+        function showNotification(title, message, icon = '🪐') {
+            const notification = document.getElementById('notification');
+            const notificationIcon = document.getElementById('notification-icon');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            notificationIcon.textContent = icon;
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            notification.style.display = 'block';
+            
+            // Автоматическое скрытие
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Создание звездного фона
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 100;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Случайные параметры звезды
+                const size = Math.random() * 2 + 1;
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const opacity = Math.random() * 0.7 + 0.3;
+                const delay = Math.random() * 3;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.opacity = opacity;
+                star.style.animationDelay = `${delay}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Создание новой планеты
+        function createPlanet() {
+            const planetNames = ['Марс', 'Юпитер', 'Венера', 'Нептун'];
+            const planetEmojis = ['♂️', '♃', '♀️', '♆'];
+            const randomIndex = Math.floor(Math.random() * planetNames.length);
+            
+            const planetsPanel = document.querySelector('.planets-panel');
+            const newPlanet = document.createElement('div');
+            newPlanet.className = 'planet';
+            newPlanet.title = `Планета ${planetNames[randomIndex]}`;
+            newPlanet.innerHTML = `
+                ${planetEmojis[randomIndex]}
+                <div class="planet-ring"></div>
+            `;
+            
+            // Добавляем обработчик клика
+            newPlanet.addEventListener('click', () => {
+                document.querySelectorAll('.planet').forEach(p => p.classList.remove('active'));
+                newPlanet.classList.add('active');
+                showNotification('Создана новая планета', `Планета "${planetNames[randomIndex]}" добавлена`, planetEmojis[randomIndex]);
+            });
+            
+            // Вставляем перед кнопкой добавления
+            const addButton = planetsPanel.querySelector('.planet:last-child');
+            planetsPanel.insertBefore(newPlanet, addButton);
+            
+            showNotification('Планета создана!', `Добавлена планета ${planetNames[randomIndex]}`, planetEmojis[randomIndex]);
+        }
+
+        // Создание нового канала
+        function createChannel() {
+            const channelName = prompt('Введите название нового кольца Saturn:');
+            if (channelName && channelName.trim()) {
+                const channelsContainer = document.querySelector('.channels-container .category');
+                const newChannel = document.createElement('div');
+                newChannel.className = 'channel';
+                newChannel.setAttribute('data-channel', channelName.toLowerCase());
+                newChannel.innerHTML = `
+                    <span class="channel-icon">🪐</span>
+                    <span>${channelName}</span>
+                `;
+                
+                // Добавляем обработчик клика
+                newChannel.addEventListener('click', () => {
+                    document.querySelectorAll('.channel').forEach(c => c.classList.remove('active'));
+                    newChannel.classList.add('active');
+                    switchChannel(channelName, '🪐');
+                });
+                
+                channelsContainer.appendChild(newChannel);
+                showNotification('Канал создан', `Добавлен канал #${channelName}`, '🪐');
+            }
+        }
+
+        // Создание голосового канала
+        function createVoiceChannel() {
+            const channelName = prompt('Введите название новой орбиты:');
+            if (channelName && channelName.trim()) {
+                const categories = document.querySelectorAll('.category');
+                const voiceCategory = categories[1];
+                const newChannel = document.createElement('div');
+                newChannel.className = 'channel';
+                newChannel.setAttribute('data-channel', channelName.toLowerCase());
+                newChannel.innerHTML = `
+                    <span class="channel-icon">🔊</span>
+                    <span>${channelName}</span>
+                `;
+                
+                voiceCategory.appendChild(newChannel);
+                showNotification('Орбита создана', `Добавлена голосовая орбита ${channelName}`, '🔊');
+            }
+        }
+
+        // Экранирование HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Горячие клавиши
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + / для фокуса на ввод
+            if (e.ctrlKey && e.key === '/') {
+                e.preventDefault();
+                document.getElementById('message-input').focus();
+            }
+            
+            // Esc для очистки ввода
+            if (e.key === 'Escape') {
+                document.getElementById('message-input').value = '';
+                document.getElementById('message-input').blur();
+            }
+            
+            // Ctrl + K для переключения каналов
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                document.querySelectorAll('.channel')[1].click();
+            }
+        });
+
+        // Приветственное уведомление
+        setTimeout(() => {
+            showNotification(
+                'Добро пожаловать в Saturn Network! 🚀',
+                'Используйте Ctrl+/ для фокуса на ввод, Esc для очистки',
+                '👨‍🚀'
+            );
+        }, 1000);
+    </script>
+</body>
+</html>
